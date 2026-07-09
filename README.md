@@ -68,6 +68,12 @@ docker compose up -d
 
 首次打开后进入右上角配置，填入自己的 OpenAI 兼容 `Base URL` 和 `API Key`。
 
+### 桌面应用打包
+
+项目提供 Electron 和 Tauri 两套桌面端打包配置，详见 [desktop/README.md](desktop/README.md) 和 [src-tauri/README.md](src-tauri/README.md)。
+
+推送 `v*` tag 或手动触发 GitHub Actions 的 `Desktop builds` / `Tauri builds` workflow 后，会分别在 macOS、Windows 和 Linux runner 上构建安装包，并在 tag 构建时上传到 GitHub Release。
+
 ## New API 自动配置
 
 如果使用 New API，可在 `系统设置 -> 聊天方式 -> 添加聊天设置` 中填入：

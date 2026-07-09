@@ -9,3 +9,6 @@ data/
 .DS_Store
 .idea
 web/dist
+desktop/release/
+desktop/dist/
+src-tauri/target/

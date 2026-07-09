@@ -5,6 +5,8 @@ description: 当前版本已实现但仍需人工验证的变更项
 
 # 待测试
 
+- 桌面应用打包：新增 Electron 桌面壳和 `Desktop builds` GitHub Actions workflow，需验证手动触发和 `v*` tag 触发能分别产出 macOS `.dmg` / `.zip`、Windows `.exe`、Linux `.AppImage` / `.deb`，并确认未签名包的系统提示符合预期。
+- Tauri 桌面打包：新增 `src-tauri` 和 `Tauri builds` GitHub Actions workflow，需验证手动触发和 `v*` tag 触发能分别产出 macOS `.dmg`、Windows `.exe`、Linux `.AppImage` / `.deb`，并对比 Electron 版本包体积和运行兼容性。
 - 画布节点名称：每个节点保留 `title` 名称字段，默认名称显示在节点上方，双击名称可直接编辑，节点信息弹窗和 JSON 可查看该字段。
 - 画布节点工具条：节点顶部工具条改为点击选中节点后显示，单纯鼠标移入 / 移出节点不应再频繁弹出。
 - 画布组节点：工具栏新增“组”节点，普通节点拖入组区域会高亮目标组，松手后自动吸附进组；拖出组区域会解除归属，拖动组节点会一起移动组内子节点。

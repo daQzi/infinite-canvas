@@ -1,0 +1,81 @@
+{
+  "name": "@basketikun/infinite-canvas-desktop",
+  "version": "0.6.0",
+  "private": true,
+  "type": "module",
+  "description": "Infinite Canvas desktop application shell.",
+  "main": "src/main.js",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "build:web": "cd ../web && VITE_BASE=./ npm run build",
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^43.1.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "best.canvas.infinite",
+    "productName": "无限画布",
+    "artifactName": "InfiniteCanvas-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../web/dist",
+        "to": "web",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.graphics-design",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "linux": {
+      "category": "Graphics",
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    },
+    "nsis": {
+      "artifactName": "InfiniteCanvas-${version}-windows-${arch}-setup.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "portable": {
+      "artifactName": "InfiniteCanvas-${version}-windows-${arch}-portable.${ext}"
+    }
+  }
+}
