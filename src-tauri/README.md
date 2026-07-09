@@ -30,7 +30,7 @@ npx --yes @tauri-apps/cli@2.11.4 build
 
 正式发布由 `.github/workflows/release.yml` 处理。推送 `v*.*.*` tag 后会先创建草稿 Release，校验 tag、`VERSION` 和 `src-tauri/tauri.conf.json` 版本一致，再分别构建 macOS Apple Silicon、macOS Intel、Windows x64 和 Linux x64 产物，全部成功后发布 Release。
 
-macOS 正式发布会导入 Developer ID 证书并进行签名 / notarization，需要在 GitHub Secrets 配置：
+如果已配置 Apple Developer ID 信息，macOS 正式发布会自动签名 / notarization，减少“已损坏”或 Gatekeeper 拦截提示。未配置时也会继续产出未签名 macOS 包，但下载后可能需要用户手动放行。可选 GitHub Secrets：
 
 - `APPLE_CERTIFICATE`
 - `APPLE_CERTIFICATE_PASSWORD`

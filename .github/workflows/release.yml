@@ -228,7 +228,8 @@ jobs:
         working-directory: web
         run: bun install --frozen-lockfile
 
-      - name: Import Apple Developer ID certificate
+      - id: apple_signing
+        name: Detect Apple signing secrets
         if: contains(matrix.target, 'apple-darwin')
         shell: bash
         env:
@@ -254,10 +255,22 @@ jobs:
             fi
           done
 
-          if [ "${#missing[@]}" -ne 0 ]; then
-            printf '::error::Missing required Apple signing secret(s): %s\n' "${missing[*]}"
-            exit 1
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            printf '::warning::Apple signing secrets are incomplete: %s. macOS artifacts will be unsigned and may be blocked by Gatekeeper.\n' "${missing[*]}"
           fi
+
+      - name: Import Apple Developer ID certificate
+        if: contains(matrix.target, 'apple-darwin') && steps.apple_signing.outputs.enabled == 'true'
+        shell: bash
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
 
           keychain_path="$RUNNER_TEMP/infinite-canvas-signing.keychain-db"
           certificate_path="$RUNNER_TEMP/developer-id.p12"
@@ -307,7 +320,7 @@ jobs:
           security find-identity -v -p codesigning "$keychain_path"
 
       - name: Resolve Apple Developer ID identity
-        if: contains(matrix.target, 'apple-darwin')
+        if: contains(matrix.target, 'apple-darwin') && steps.apple_signing.outputs.enabled == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -347,7 +360,7 @@ jobs:
           retryAttempts: 2
 
       - name: Delete Apple signing keychain
-        if: always() && contains(matrix.target, 'apple-darwin')
+        if: always() && contains(matrix.target, 'apple-darwin') && steps.apple_signing.outputs.enabled == 'true'
         shell: bash
         run: |
           if [ -n "${APPLE_ORIGINAL_DEFAULT_KEYCHAIN:-}" ]; then
