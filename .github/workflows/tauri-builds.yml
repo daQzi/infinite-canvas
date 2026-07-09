@@ -20,15 +20,30 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: macOS
+          - name: macOS Apple Silicon
             os: macos-latest
-            args: --bundles dmg
+            args: --target aarch64-apple-darwin --bundles dmg
+            artifact: macos-arm64
+            bundle_path: src-tauri/target/aarch64-apple-darwin/release/bundle
+            rust_target: aarch64-apple-darwin
+          - name: macOS Intel
+            os: macos-latest
+            args: --target x86_64-apple-darwin --bundles dmg
+            artifact: macos-x64
+            bundle_path: src-tauri/target/x86_64-apple-darwin/release/bundle
+            rust_target: x86_64-apple-darwin
           - name: Windows
             os: windows-latest
             args: --bundles nsis
+            artifact: windows
+            bundle_path: src-tauri/target/release/bundle
+            rust_target: ""
           - name: Linux
             os: ubuntu-latest
             args: --bundles appimage,deb
+            artifact: linux
+            bundle_path: src-tauri/target/release/bundle
+            rust_target: ""
 
     steps:
       - uses: actions/checkout@v4
@@ -40,6 +55,10 @@ jobs:
       - uses: oven-sh/setup-bun@v2
 
       - uses: dtolnay/rust-toolchain@stable
+
+      - name: Add Rust target
+        if: matrix.rust_target != ''
+        run: rustup target add ${{ matrix.rust_target }}
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
@@ -67,12 +86,12 @@ jobs:
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: infinite-canvas-tauri-${{ runner.os }}
+          name: infinite-canvas-tauri-${{ matrix.artifact }}
           path: |
-            src-tauri/target/release/bundle/**/*.dmg
-            src-tauri/target/release/bundle/**/*.exe
-            src-tauri/target/release/bundle/**/*.AppImage
-            src-tauri/target/release/bundle/**/*.deb
+            ${{ matrix.bundle_path }}/**/*.dmg
+            ${{ matrix.bundle_path }}/**/*.exe
+            ${{ matrix.bundle_path }}/**/*.AppImage
+            ${{ matrix.bundle_path }}/**/*.deb
           if-no-files-found: error
 
       - name: Upload release assets
@@ -80,7 +99,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            src-tauri/target/release/bundle/**/*.dmg
-            src-tauri/target/release/bundle/**/*.exe
-            src-tauri/target/release/bundle/**/*.AppImage
-            src-tauri/target/release/bundle/**/*.deb
+            ${{ matrix.bundle_path }}/**/*.dmg
+            ${{ matrix.bundle_path }}/**/*.exe
+            ${{ matrix.bundle_path }}/**/*.AppImage
+            ${{ matrix.bundle_path }}/**/*.deb
