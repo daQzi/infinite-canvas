@@ -5,7 +5,7 @@
   "identifier": "best.canvas.infinite.tauri",
   "build": {
     "beforeDevCommand": "cd ../web && bun run dev",
-    "beforeBuildCommand": "cd ../web && VITE_BASE=./ bun run build",
+    "beforeBuildCommand": "cd ../web && bun run build:tauri",
     "devUrl": "http://localhost:3000",
     "frontendDist": "../web/dist"
   },
