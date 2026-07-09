@@ -29,6 +29,27 @@ http://localhost:3000
 docker compose -f docker-compose.local.yml up -d --build
 ```
 
+## AI 接口代理
+
+主应用镜像使用 nginx 静态托管前端。默认情况下，前端会按配置里的 `Base URL` 从浏览器直接请求模型接口；如果上游接口没有开放 CORS，可以使用镜像内置的 `/v1/` 同源代理。
+
+`AI_PROXY_TARGET` 用来配置代理目标，默认发布镜像为 `https://api.openai.com`，本地构建示例默认为 `https://shayulajiao.xyz`：
+
+```yaml
+services:
+  app:
+    environment:
+      AI_PROXY_TARGET: https://shayulajiao.xyz
+```
+
+使用代理时，前端配置里的 `Base URL` 填当前站点地址，例如：
+
+```text
+http://localhost:3000
+```
+
+系统会请求 `http://localhost:3000/v1/...`，由 nginx 转发到 `${AI_PROXY_TARGET}/v1/...`。
+
 ## 文档站镜像
 
 文档站位于 `docs/` 目录，按带服务端能力的 Next.js standalone 应用单独构建，不打进主应用镜像。
@@ -49,4 +70,4 @@ docker compose -f docker-compose.local.yml up -d --build
 
 ## 数据说明
 
-当前主应用镜像只启动 Next.js。画布、我的素材、生成记录和 AI API Key 默认保存在浏览器本地；第三方提示词由浏览器前端直连拉取，不需要额外挂载数据目录。
+当前主应用镜像只启动 nginx 静态前端。画布、我的素材、生成记录和 AI API Key 默认保存在浏览器本地；第三方提示词由浏览器前端直连拉取，不需要额外挂载数据目录。

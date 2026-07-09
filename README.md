@@ -66,7 +66,7 @@ docker compose up -d
 
 运行后默认端口3000，可访问 `http://localhost:3000`。
 
-首次打开后进入右上角配置，填入自己的 OpenAI 兼容 `Base URL` 和 `API Key`。
+首次打开后进入右上角配置，填入自己的 OpenAI 兼容 `Base URL` 和 `API Key`。如果上游接口不支持浏览器 CORS，可以把 Docker 环境变量 `AI_PROXY_TARGET` 配成上游地址，并在前端把 `Base URL` 填为当前站点地址，例如 `http://localhost:3000`。
 
 ### 桌面应用打包
 

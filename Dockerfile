@@ -11,8 +11,9 @@ RUN bun run build
 
 # 运行镜像：只启动静态前端，AI 请求由浏览器前台直连用户自己的接口。
 FROM nginx:1.27-alpine
+ENV AI_PROXY_TARGET=https://api.openai.com
 
 COPY --from=web-build /app/web/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 
 EXPOSE 3000

@@ -4,6 +4,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      AI_PROXY_TARGET: https://shayulajiao.xyz
     ports:
       - "3000:3000"
     restart: unless-stopped

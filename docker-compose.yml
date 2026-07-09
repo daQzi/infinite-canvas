@@ -2,6 +2,8 @@ services:
   app:
     image: ghcr.io/basketikun/infinite-canvas:latest
     container_name: infinite-canvas
+    environment:
+      AI_PROXY_TARGET: https://api.openai.com
     ports:
       - "3000:3000"
     restart: unless-stopped
