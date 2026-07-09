@@ -2,6 +2,7 @@ import axios from "axios";
 
 import { audioMimeType, normalizeAudioFormatValue, normalizeAudioSpeedValue, normalizeAudioVoiceValue } from "@/lib/audio-generation";
 import { uploadMediaFile, type UploadedFile } from "@/services/file-storage";
+import { httpPost } from "@/services/api/http-client";
 import { buildApiUrl, resolveModelRequestConfig, type AiConfig } from "@/stores/use-config-store";
 
 type RequestOptions = { signal?: AbortSignal };
@@ -25,7 +26,7 @@ export async function requestAudioGeneration(config: AiConfig, prompt: string, o
     const instructions = config.audioInstructions.trim();
 
     try {
-        const response = await axios.post<Blob>(
+        const response = await httpPost<Blob>(
             aiApiUrl(requestConfig, "/audio/speech"),
             {
                 model,

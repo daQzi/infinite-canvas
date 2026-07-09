@@ -19,6 +19,12 @@ npx --yes @tauri-apps/cli@2.11.4 build
 
 产物会输出到 `src-tauri/target/release/bundle/`。
 
+## AI 接口请求
+
+桌面端运行在 Tauri WebView 中，前端直接请求第三方 AI Base URL 时仍会受到浏览器 CORS 限制。Tauri 包现在通过 `tauri_http_request` 命令把 AI 请求交给 Rust 侧 `reqwest` 执行，再把响应回传给前端。
+
+使用时 Base URL 仍填写真实服务地址，例如 `https://example.com/v1`，不需要改成 `localhost` 或 Docker 代理地址。
+
 ## GitHub Actions
 
 `.github/workflows/tauri-builds.yml` 支持手动触发，用于下载测试构建产物：
