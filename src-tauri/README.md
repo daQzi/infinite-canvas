@@ -5,7 +5,7 @@ Tauri 版本会复用 `web/` 的 Vite 静态产物，并在打包前执行：
 ```bash
 cd web
 bun install --frozen-lockfile
-VITE_BASE=./ bun run build
+bun run build:tauri
 ```
 
 ## 本地打包
@@ -21,10 +21,20 @@ npx --yes @tauri-apps/cli@2.11.4 build
 
 ## GitHub Actions
 
-`.github/workflows/tauri-builds.yml` 支持手动触发，也会在推送 `v*` tag 时自动构建：
+`.github/workflows/tauri-builds.yml` 支持手动触发，用于下载测试构建产物：
 
-- macOS：`.dmg`
+- macOS Apple Silicon：`.dmg`
+- macOS Intel：`.dmg`
 - Windows：NSIS `.exe`
 - Linux：`.AppImage`、`.deb`
 
-tag 触发时会把产物上传到对应 GitHub Release。当前未配置代码签名，正式分发前建议补充 macOS notarization 和 Windows 代码签名。
+正式发布由 `.github/workflows/release.yml` 处理。推送 `v*.*.*` tag 后会先创建草稿 Release，校验 tag、`VERSION` 和 `src-tauri/tauri.conf.json` 版本一致，再分别构建 macOS Apple Silicon、macOS Intel、Windows x64 和 Linux x64 产物，全部成功后发布 Release。
+
+macOS 正式发布会导入 Developer ID 证书并进行签名 / notarization，需要在 GitHub Secrets 配置：
+
+- `APPLE_CERTIFICATE`
+- `APPLE_CERTIFICATE_PASSWORD`
+- `KEYCHAIN_PASSWORD`
+- `APPLE_ID`
+- `APPLE_PASSWORD`
+- `APPLE_TEAM_ID`

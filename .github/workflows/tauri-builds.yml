@@ -1,12 +1,10 @@
 name: Tauri builds
 
 on:
-  push:
-    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: tauri-builds-${{ github.ref }}
@@ -93,13 +91,3 @@ jobs:
             ${{ matrix.bundle_path }}/**/*.AppImage
             ${{ matrix.bundle_path }}/**/*.deb
           if-no-files-found: error
-
-      - name: Upload release assets
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            ${{ matrix.bundle_path }}/**/*.dmg
-            ${{ matrix.bundle_path }}/**/*.exe
-            ${{ matrix.bundle_path }}/**/*.AppImage
-            ${{ matrix.bundle_path }}/**/*.deb
