@@ -74,6 +74,11 @@ docker compose up -d
 
 推送 `v*` tag 或手动触发 GitHub Actions 的 `Desktop builds` / `Tauri builds` workflow 后，会分别在 macOS、Windows 和 Linux runner 上构建安装包，并在 tag 构建时上传到 GitHub Release。
 
+```
+##mac目前没有签名 需要手动执行以下命令
+xattr -dr com.apple.quarantine /Applications/无限画布.app
+```
+
 ## New API 自动配置
 
 如果使用 New API，可在 `系统设置 -> 聊天方式 -> 添加聊天设置` 中填入：
