@@ -1,15 +1,24 @@
 import localforage from "localforage";
 import { nanoid } from "nanoid";
 
+import { httpFetch } from "@/services/api/http-client";
+import { cleanupTauriMediaBlobs, deleteTauriMediaBlobs, readTauriMediaBlob, storeTauriMediaBlob } from "@/services/tauri-media-storage";
+import { isTauriRuntime } from "@/services/tauri-backend";
+
 export type UploadedFile = { url: string; storageKey: string; bytes: number; mimeType: string; width?: number; height?: number; durationMs?: number };
 
 const store = localforage.createInstance({ name: "infinite-canvas", storeName: "media_files" });
 const objectUrls = new Map<string, string>();
+const MEDIA_STORAGE_PREFIXES = ["video:", "audio:", "file:", "video-reference:", "audio-reference:"];
 
 export async function uploadMediaFile(input: string | Blob, prefix = "file"): Promise<UploadedFile> {
-    const blob = typeof input === "string" ? await (await fetch(input)).blob() : input;
+    const blob = typeof input === "string" ? await (await httpFetch(input)).blob() : input;
     const storageKey = `${prefix}:${nanoid()}`;
-    await store.setItem(storageKey, blob);
+    if (isTauriRuntime()) {
+        await storeTauriMediaBlob(storageKey, blob, prefix);
+    } else {
+        await store.setItem(storageKey, blob);
+    }
     const url = URL.createObjectURL(blob);
     objectUrls.set(storageKey, url);
     const meta = blob.type.startsWith("video/") ? await readVideoMeta(url) : blob.type.startsWith("audio/") ? await readAudioMeta(url) : {};
@@ -20,7 +29,7 @@ export async function resolveMediaUrl(storageKey?: string, fallback = "") {
     if (!storageKey) return fallback;
     const cached = objectUrls.get(storageKey);
     if (cached) return cached;
-    const blob = await store.getItem<Blob>(storageKey);
+    const blob = isTauriRuntime() ? await readTauriMediaBlob(storageKey) : await store.getItem<Blob>(storageKey);
     if (!blob) return fallback;
     const url = URL.createObjectURL(blob);
     objectUrls.set(storageKey, url);
@@ -28,22 +37,31 @@ export async function resolveMediaUrl(storageKey?: string, fallback = "") {
 }
 
 export async function getMediaBlob(storageKey: string) {
+    if (isTauriRuntime()) return readTauriMediaBlob(storageKey);
     return store.getItem<Blob>(storageKey);
 }
 
 export async function setMediaBlob(storageKey: string, blob: Blob) {
-    await store.setItem(storageKey, blob);
+    if (isTauriRuntime()) {
+        await storeTauriMediaBlob(storageKey, blob, storageKeyPrefix(storageKey));
+    } else {
+        await store.setItem(storageKey, blob);
+    }
     const url = URL.createObjectURL(blob);
     objectUrls.set(storageKey, url);
     return url;
 }
 
 export async function deleteStoredMedia(keys: Iterable<string>) {
+    const storageKeys = Array.from(new Set(keys));
+    storageKeys.forEach((key) => {
+        const url = objectUrls.get(key);
+        if (url) URL.revokeObjectURL(url);
+        objectUrls.delete(key);
+    });
+    if (await deleteTauriMediaBlobs(storageKeys)) return;
     await Promise.all(
-        Array.from(new Set(keys)).map(async (key) => {
-            const url = objectUrls.get(key);
-            if (url) URL.revokeObjectURL(url);
-            objectUrls.delete(key);
+        storageKeys.map(async (key) => {
             await store.removeItem(key);
         }),
     );
@@ -51,6 +69,15 @@ export async function deleteStoredMedia(keys: Iterable<string>) {
 
 export async function cleanupUnusedMedia(usedData: unknown) {
     const usedKeys = collectMediaStorageKeys(usedData);
+    const deletedKeys = await cleanupTauriMediaBlobs(usedKeys, MEDIA_STORAGE_PREFIXES);
+    if (deletedKeys) {
+        deletedKeys.forEach((key) => {
+            const url = objectUrls.get(key);
+            if (url) URL.revokeObjectURL(url);
+            objectUrls.delete(key);
+        });
+        return;
+    }
     const unused: string[] = [];
     await store.iterate((_value, key) => {
         if (!usedKeys.has(key)) unused.push(key);
@@ -83,4 +110,8 @@ function readAudioMeta(url: string) {
         audio.onerror = done;
         audio.src = url;
     });
+}
+
+function storageKeyPrefix(storageKey: string) {
+    return storageKey.split(":")[0] || "file";
 }

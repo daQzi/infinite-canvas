@@ -1,6 +1,9 @@
+import { base64ToBytes, bytesToBase64, getTauriInvoke, isTauriRuntime } from "@/services/tauri-backend";
+
 type HttpResponseType = "json" | "blob" | "text";
 type HttpBody = BodyInit | Record<string, unknown> | unknown[] | null | undefined;
-type TauriInvoke = <T>(command: string, args?: Record<string, unknown>) => Promise<T>;
+
+export { isTauriRuntime };
 
 type TauriHttpResponse = {
     status: number;
@@ -41,10 +44,6 @@ export class HttpRequestError<T = unknown> extends Error {
     }
 }
 
-export function isTauriRuntime() {
-    return Boolean(getTauriInvoke());
-}
-
 export async function httpGet<T>(url: string, options: HttpRequestOptions = {}) {
     return httpRequest<T>("GET", url, undefined, options);
 }
@@ -54,7 +53,7 @@ export async function httpPost<T>(url: string, body?: HttpBody, options: HttpReq
 }
 
 export async function httpFetch(url: string, init: RequestInit = {}) {
-    if (!isTauriRuntime()) return fetch(url, init);
+    if (!isTauriRuntime() || !isHttpUrl(url)) return fetch(url, init);
     return tauriFetch(url, init);
 }
 
@@ -96,12 +95,6 @@ async function tauriFetch(url: string, init: RequestInit) {
         status: response.status,
         headers: response.headers,
     });
-}
-
-function getTauriInvoke(): TauriInvoke | null {
-    if (typeof window === "undefined") return null;
-    const internals = (window as Window & { __TAURI_INTERNALS__?: { invoke?: TauriInvoke } }).__TAURI_INTERNALS__;
-    return typeof internals?.invoke === "function" ? internals.invoke.bind(internals) : null;
 }
 
 function normalizeRequestBody(body: HttpBody, headers: Record<string, string>): BodyInit | undefined {
@@ -183,22 +176,8 @@ function isInstance(value: object, constructorName: "Blob" | "FormData" | "URLSe
     return typeof constructor !== "undefined" && value instanceof constructor;
 }
 
-function bytesToBase64(bytes: Uint8Array) {
-    let binary = "";
-    const chunkSize = 0x8000;
-    for (let index = 0; index < bytes.length; index += chunkSize) {
-        binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
-    }
-    return btoa(binary);
-}
-
-function base64ToBytes(value: string) {
-    const binary = atob(value || "");
-    const bytes = new Uint8Array(binary.length);
-    for (let index = 0; index < binary.length; index += 1) {
-        bytes[index] = binary.charCodeAt(index);
-    }
-    return bytes;
+function isHttpUrl(url: string) {
+    return /^https?:\/\//i.test(url);
 }
 
 function abortable<T>(promise: Promise<T>, signal?: AbortSignal | null) {

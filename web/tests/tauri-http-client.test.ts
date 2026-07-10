@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-import { httpGet, httpPost, isTauriRuntime } from "../src/services/api/http-client";
+import { httpFetch, httpGet, httpPost, isTauriRuntime } from "../src/services/api/http-client";
 
 function toBase64(value: string) {
     return Buffer.from(value).toString("base64");
@@ -45,5 +45,13 @@ assert.match(fromBase64(capturedPayload?.bodyBase64 as string), /name="prompt"\r
 await httpGet("https://provider.example/v1/models");
 assert.equal(capturedPayload?.method, "GET", "GET requests are forwarded");
 assert.equal(capturedPayload?.bodyBase64, undefined, "GET requests do not send an empty body");
+
+let browserFetchUrl = "";
+(globalThis as any).fetch = async (url: string) => {
+    browserFetchUrl = url;
+    return new Response("local");
+};
+await httpFetch("blob:local-object-url");
+assert.equal(browserFetchUrl, "blob:local-object-url", "non-http local URLs keep using browser fetch");
 
 console.log("tauri http client tests passed");

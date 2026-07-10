@@ -25,6 +25,15 @@ npx --yes @tauri-apps/cli@2.11.4 build
 
 使用时 Base URL 仍填写真实服务地址，例如 `https://example.com/v1`，不需要改成 `localhost` 或 Docker 代理地址。
 
+## Rust 本地后端
+
+Tauri 桌面端的原生能力集中在 `src-tauri/src/backend/`：
+
+- `http`：统一处理桌面端外部 HTTP 请求，避免 WebView CORS 限制。
+- `media`：把图片、视频、音频等媒体文件写入系统应用数据目录，并由前端继续通过 Blob URL 渲染。
+
+Web/Docker 版本仍使用浏览器存储；只有 Tauri 环境会调用 Rust 后端命令。
+
 ## GitHub Actions
 
 `.github/workflows/tauri-builds.yml` 支持手动触发，用于下载测试构建产物：

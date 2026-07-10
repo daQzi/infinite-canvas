@@ -184,10 +184,6 @@ jobs:
             runner: windows-2022
             target: x86_64-pc-windows-msvc
             args: --target x86_64-pc-windows-msvc --bundles nsis
-          - name: Linux x64
-            runner: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            args: --target x86_64-unknown-linux-gnu --bundles appimage,deb
     steps:
       - uses: actions/checkout@v4
         with:
@@ -207,22 +203,6 @@ jobs:
         with:
           workspaces: ./src-tauri -> target
           shared-key: tauri-${{ matrix.target }}
-
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            curl \
-            file \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            libssl-dev \
-            libwebkit2gtk-4.1-dev \
-            libxdo-dev \
-            patchelf \
-            wget
 
       - name: Install web dependencies
         working-directory: web

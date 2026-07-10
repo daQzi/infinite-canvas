@@ -6,18 +6,19 @@ description: 当前版本已实现但仍需人工验证的变更项
 # 待测试
 
 - 桌面应用打包：新增 Electron 桌面壳和 `Desktop builds` GitHub Actions workflow，需验证手动触发能分别产出 macOS `.dmg` / `.zip`、Windows `.exe`、Linux `.AppImage` / `.deb`。
-- Tauri 桌面打包：新增 `src-tauri`、手动 `Tauri builds` workflow 和正式 `Release` workflow，需验证手动触发能分别产出 macOS Apple Silicon / Intel `.dmg`、Windows `.exe`、Linux `.AppImage` / `.deb`，并验证 `v*.*.*` tag 发布会创建草稿 Release；配置 Apple secrets 时会签名 / notarization，未配置时会发布未签名 macOS 产物。
+- Tauri 桌面打包：手动 `Tauri builds` workflow 仍需验证 macOS Apple Silicon / Intel `.dmg`、Windows `.exe`、Linux `.AppImage` / `.deb`；`v*.*.*` 标签触发的 `Release` workflow 仅构建 macOS 和 Windows 安装包并创建草稿 Release，配置 Apple secrets 时会签名 / notarization，未配置时会发布未签名 macOS 产物。
 - 画布节点名称：每个节点保留 `title` 名称字段，默认名称显示在节点上方，双击名称可直接编辑，节点信息弹窗和 JSON 可查看该字段。
 - 画布节点工具条：节点顶部工具条改为点击选中节点后显示，单纯鼠标移入 / 移出节点不应再频繁弹出。
 - 画布组节点：工具栏新增“组”节点，普通节点拖入组区域会高亮目标组，松手后自动吸附进组；拖出组区域会解除归属，拖动组节点会一起移动组内子节点。
-- GitHub Pages：新增版本 tag 触发的前端静态站点自动发布 workflow，需在仓库 Pages 设置中选择 GitHub Actions 并验证路由刷新回退。
+- GitHub Actions 触发策略：仅 `Release` workflow 保留 `v*.*.*` 标签自动触发；Desktop、Tauri、Docker、Docs Docker、GitHub Pages 和 Canvas Agent 发布均只允许手动触发，需验证 Actions 页面可正常启动各工作流且推送普通提交或标签不会重复触发。
 - Docker AI 代理：主应用 nginx 镜像新增 `/v1/` 同源代理，`AI_PROXY_TARGET` 可配置上游 OpenAI 兼容地址；需验证浏览器 Base URL 填当前站点地址时，可以避开上游 CORS 限制。
 - 画布图片切图：行数 / 列数会生成可直接拖拽的等分切图线，并支持新增横向 / 纵向线、删除单条线、重置切图线和切片数量预览。
 - Codex App 插件文档：新增插件安装教程，区分 AI 自动安装、手动安装和本仓库开发调试安装；同步优化插件 README 与技能说明。
 - 本地 Codex 连接画布文档：新增 Canvas Agent、MCP、SSE 与浏览器画布交互原理说明，需确认文档导航和描述是否清晰。
 - 顶部导航：缩小桌面顶部导航栏高度，导航项下划线和内容垂直对齐需确认。
-- 配置与用户偏好：新增独立顶部导航页面，并在页面和弹窗中复用同一套配置面板；新增 Codex Tab，展示插件安装和本地 Agent 启动步骤，可配置本地 Agent 地址、Connect token 和工具执行确认开关。
-- Codex 全局连接：配置页可直接连接本地 Canvas Agent，连接状态同步到画布和顶部 OpenAI 状态图标，刷新后会按本地保存的地址和 token 自动尝试重连；需验证已连接、连接中、连接失败、断开和刷新自动重连状态。
+- 配置与用户偏好：统一使用全局配置弹窗，移除独立顶部导航页面；弹窗保留 Codex Tab、本地 Agent 地址、Connect token 和工具执行确认开关，完整配置点击“完成”后提示保存成功，不完整配置保持弹窗打开并提示缺项。
+- Codex 全局连接：配置弹窗可直接连接本地 Canvas Agent，连接状态同步到画布和顶部 OpenAI 状态图标，刷新后会按本地保存的地址和 token 自动尝试重连；需验证已连接、连接中、连接失败、断开和刷新自动重连状态。
+- 顶部外部链接：普通页面、画布右上角和画布菜单移除文档及 GitHub 外部入口，需确认剩余配置、主题、版本和快捷键控件布局正常。
 - 画布 Agent：Codex 旧 thread 在重启后不可用时会自动新建会话并重试，需验证进入画布直接发送消息不会再出现 `thread not loaded` 或 `no rollout found`。
 - 画布 Agent：切换不同画布时会清空并重新加载当前 canvasId 对应的 Codex 会话，需验证不会继续显示上一个画布的对话。
 - 画布 Agent：右侧 Agent 面板移除网站 / 本机模式切换，固定使用本机 Agent。

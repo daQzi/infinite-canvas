@@ -108,6 +108,10 @@ export const defaultWebdavSyncConfig: WebdavSyncConfig = {
     lastSyncedAt: "",
 };
 
+export function hasReadyModelChannel(channels: ModelChannel[]) {
+    return channels.some((channel) => channel.baseUrl.trim() && channel.apiKey.trim() && channel.models.some((model) => model.trim()));
+}
+
 type ConfigStore = {
     config: AiConfig;
     webdav: WebdavSyncConfig;
