@@ -70,7 +70,7 @@ docker compose up -d
 
 ### 桌面应用打包
 
-项目提供 Electron 和 Tauri 两套桌面端打包配置，详见 [desktop/README.md](desktop/README.md) 和 [src-tauri/README.md](src-tauri/README.md)。
+项目使用 Tauri 提供桌面端打包配置，详见 [src-tauri/README.md](src-tauri/README.md)。
 
 推送与应用版本一致的 `v*.*.*` tag 会自动触发 `Release` workflow，构建 macOS 和 Windows 安装包并创建 GitHub 草稿 Release。其余 GitHub Actions workflow 仅支持在 Actions 页面手动触发。
 

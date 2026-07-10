@@ -5,12 +5,11 @@ description: 当前版本已实现但仍需人工验证的变更项
 
 # 待测试
 
-- 桌面应用打包：新增 Electron 桌面壳和 `Desktop builds` GitHub Actions workflow，需验证手动触发能分别产出 macOS `.dmg` / `.zip`、Windows `.exe`、Linux `.AppImage` / `.deb`。
 - Tauri 桌面打包：手动 `Tauri builds` workflow 仍需验证 macOS Apple Silicon / Intel `.dmg`、Windows `.exe`、Linux `.AppImage` / `.deb`；`v*.*.*` 标签触发的 `Release` workflow 仅构建 macOS 和 Windows 安装包并创建草稿 Release，配置 Apple secrets 时会签名 / notarization，未配置时会发布未签名 macOS 产物。
 - 画布节点名称：每个节点保留 `title` 名称字段，默认名称显示在节点上方，双击名称可直接编辑，节点信息弹窗和 JSON 可查看该字段。
 - 画布节点工具条：节点顶部工具条改为点击选中节点后显示，单纯鼠标移入 / 移出节点不应再频繁弹出。
 - 画布组节点：工具栏新增“组”节点，普通节点拖入组区域会高亮目标组，松手后自动吸附进组；拖出组区域会解除归属，拖动组节点会一起移动组内子节点。
-- GitHub Actions 触发策略：仅 `Release` workflow 保留 `v*.*.*` 标签自动触发；Desktop、Tauri、Docker、Docs Docker、GitHub Pages 和 Canvas Agent 发布均只允许手动触发，需验证 Actions 页面可正常启动各工作流且推送普通提交或标签不会重复触发。
+- GitHub Actions 触发策略：仅 `Release` workflow 保留 `v*.*.*` 标签自动触发；Tauri、Docker、Docs Docker、GitHub Pages 和 Canvas Agent 发布均只允许手动触发，需验证 Actions 页面可正常启动各工作流且推送普通提交或标签不会重复触发。
 - Docker AI 代理：主应用 nginx 镜像新增 `/v1/` 同源代理，`AI_PROXY_TARGET` 可配置上游 OpenAI 兼容地址；需验证浏览器 Base URL 填当前站点地址时，可以避开上游 CORS 限制。
 - 画布图片切图：行数 / 列数会生成可直接拖拽的等分切图线，并支持新增横向 / 纵向线、删除单条线、重置切图线和切片数量预览。
 - Codex App 插件文档：新增插件安装教程，区分 AI 自动安装、手动安装和本仓库开发调试安装；同步优化插件 README 与技能说明。
@@ -29,6 +28,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 - WebDAV 同步：移除 Next.js 转发代理和连接方式选择，改为浏览器前端直接连接 WebDAV 服务。
 - 提示词库：移除 Next.js route 抓取和服务端内存缓存，改为浏览器前端直连 GitHub 原始文件并缓存到 IndexedDB。
 - 提示词库：移除已 404 的 `EvoLinkAI/awesome-gpt-image-2-API-and-Prompts` 来源。
+- 提示词封面：提示词缺少封面或远程封面加载失败时显示“暂无封面”，需验证首页、提示词库和提示词选择弹窗不会出现空图片地址或布局跳动。
 - 前端构建：移除 Next.js，改为 Vite + React Router，并将前端目录调整为 `pages` / `components` / `stores` / `lib` / `layouts` / `styles`，需验证首页、图片/视频工作台、素材、提示词库和画布路由跳转。
 - 前端构建：修复 TypeScript 严格检查下的构建报错。
 - Vercel 部署：新增 `web` 和 `docs` 两个子项目的 Vercel 配置，需分别验证静态前端和文档站部署。
