@@ -6,8 +6,16 @@ description: 当前版本已实现但仍需人工验证的变更项
 # 待测试
 
 - Tauri 桌面打包：手动 `Tauri builds` workflow 仍需验证 macOS Apple Silicon / Intel `.dmg`、Windows `.exe`、Linux `.AppImage` / `.deb`；`v*.*.*` 标签触发的 `Release` workflow 仅构建 macOS 和 Windows 安装包并创建草稿 Release，配置 Apple secrets 时会签名 / notarization，未配置时会发布未签名 macOS 产物。
+- 本地 Agent 连接说明：新增提醒说明只有安装 Codex 插件或手动添加 MCP 后才会增加 Codex token 消耗，直接运行 `npx -y @basketikun/canvas-agent` 不会安装 MCP；需验证文案位置清晰。
+- 本地 Agent 连接说明：画布面板和配置弹窗 Codex Tab 改为区分“Codex 插件启动画布”和“直接运行 Agent 后网页连接”两种方式，需验证文案和布局清晰。
+- 全站 Agent：Agent 面板从画布页抽离为全站常驻面板，挂在全局布局右侧，开/关只挤压左侧内容不遮挡；顶栏和画布工具条各有一个开关按钮，需验证在首页、生图、视频、素材、提示词库、画布等页面都能打开面板并保持 SSE 连接不断开。
+- 全站 Agent：新增 `site_navigate` 工具，Agent 可直接跳转 `/`、`/canvas`、`/canvas/:id`、`/image`、`/video`、`/prompts`、`/assets`，传入 `/config` 时打开统一配置弹窗；导航直接执行不走工具确认，需验证跳转或弹窗正确且 Agent 面板不消失。
+- 全站 Agent：画布工具（canvas_apply_ops 等）仅在当前处于画布页时可用，不在画布页调用会返回“当前不在画布页，请先用 site_navigate 打开画布”，需验证 Agent 会先导航到画布再执行画布操作。
+- 全站 Agent：Codex 会话改为单一站点级连续线程（不再按 canvasId 分），跨页面/跨画布保持同一条对话上下文，历史记录即这条线程；本地 Agent workspace 从按画布分改为固定 `site` workspace（`~/.infinite-canvas/codex-workspaces/site`），已装 `@basketikun/canvas-agent` 的用户需更新到新版本才生效。
+- 全站 Agent：移除仅前端调用 OpenAI responses 接口的在线画布助手死代码（含 `requestToolResponse`），Agent 统一走 MCP + 本地 Codex 链路。
 - 画布节点名称：每个节点保留 `title` 名称字段，默认名称显示在节点上方，双击名称可直接编辑，节点信息弹窗和 JSON 可查看该字段。
 - 画布节点工具条：节点顶部工具条改为点击选中节点后显示，单纯鼠标移入 / 移出节点不应再频繁弹出。
+- 画布组节点：组内子节点优先响应点击和拖拽；当鼠标位于组内节点上时，应移动 / 编辑该节点，而不是移动整个组。
 - 画布组节点：工具栏新增“组”节点，普通节点拖入组区域会高亮目标组，松手后自动吸附进组；拖出组区域会解除归属，拖动组节点会一起移动组内子节点。
 - GitHub Actions 触发策略：仅 `Release` workflow 保留 `v*.*.*` 标签自动触发；Tauri、Docker、Docs Docker、GitHub Pages 和 Canvas Agent 发布均只允许手动触发，需验证 Actions 页面可正常启动各工作流且推送普通提交或标签不会重复触发。
 - Docker AI 代理：主应用 nginx 镜像新增 `/v1/` 同源代理，`AI_PROXY_TARGET` 可配置上游 OpenAI 兼容地址；需验证浏览器 Base URL 填当前站点地址时，可以避开上游 CORS 限制。
@@ -19,10 +27,9 @@ description: 当前版本已实现但仍需人工验证的变更项
 - Codex 全局连接：配置弹窗可直接连接本地 Canvas Agent，连接状态同步到画布和顶部 OpenAI 状态图标，刷新后会按本地保存的地址和 token 自动尝试重连；需验证已连接、连接中、连接失败、断开和刷新自动重连状态。
 - 顶部外部链接：普通页面、画布右上角和画布菜单移除文档及 GitHub 外部入口，需确认剩余配置、主题、版本和快捷键控件布局正常。
 - 画布 Agent：Codex 旧 thread 在重启后不可用时会自动新建会话并重试，需验证进入画布直接发送消息不会再出现 `thread not loaded` 或 `no rollout found`。
-- 画布 Agent：切换不同画布时会清空并重新加载当前 canvasId 对应的 Codex 会话，需验证不会继续显示上一个画布的对话。
 - 画布 Agent：右侧 Agent 面板移除网站 / 本机模式切换，固定使用本机 Agent。
 - 配置与用户偏好：每个模型渠道新增 OpenAI / Gemini 调用格式选择，默认 OpenAI，切换默认格式时同步更新默认 Base URL；渠道 Tab 增加紧凑醒目的提醒，说明模型是否可选需要到“模型”Tab 选择。
-- Gemini 调用格式：支持拉取 Gemini 模型列表，并用于文本问答、在线 Agent 工具调用、基础生图和图生图请求。
+- Gemini 调用格式：支持拉取 Gemini 模型列表，并用于文本问答、基础生图和图生图请求。
 - Gemini 生图：生图工作台和画布生图会把尺寸配置转换为 Gemini `responseFormat.image.aspectRatio` 传入，需验证 1:1、9:16、16:9 及自定义像素尺寸的输出比例。
 - 音频和视频生成：选择 Gemini 调用格式时先给出不支持提示，仍需使用 OpenAI 兼容渠道。
 - WebDAV 同步：移除 Next.js 转发代理和连接方式选择，改为浏览器前端直接连接 WebDAV 服务。

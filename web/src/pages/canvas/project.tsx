@@ -23,7 +23,6 @@ import { NODE_DEFAULT_SIZE, getNodeSpec } from "@/constant/canvas";
 import { ActiveConnectionPath, ConnectionPath } from "@/components/canvas/canvas-connections";
 import { CanvasConfigComposer } from "@/components/canvas/canvas-config-composer";
 import { CanvasConfigNodePanel } from "@/components/canvas/canvas-config-node-panel";
-import { CANVAS_AGENT_PANEL_MOTION_MS, CanvasAssistantPanel } from "@/components/canvas/canvas-assistant-panel";
 import { CanvasNodeContextMenu } from "@/components/canvas/canvas-context-menu";
 import { CanvasNodeAngleDialog, type CanvasImageAngleParams } from "@/components/canvas/canvas-node-angle-dialog";
 import { CanvasNodeCropDialog, type CanvasImageCropRect } from "@/components/canvas/canvas-node-crop-dialog";
@@ -39,8 +38,7 @@ import { CanvasNodePromptPanel, type CanvasNodeGenerationMode } from "@/componen
 import { CanvasToolbar } from "@/components/canvas/canvas-toolbar";
 import { AssetPickerModal, type InsertAssetPayload } from "@/components/canvas/asset-picker-modal";
 import { CanvasZoomControls } from "@/components/canvas/canvas-zoom-controls";
-import { CanvasLocalAgentPanel } from "@/components/canvas/canvas-local-agent-panel";
-import { useCanvasAgentStore } from "@/stores/canvas/use-canvas-agent-store";
+import { useAgentStore } from "@/stores/use-agent-store";
 import { useCanvasStore } from "@/stores/canvas/use-canvas-store";
 import { applyCanvasAgentOps, type CanvasAgentOp, type CanvasAgentSnapshot } from "@/lib/canvas/canvas-agent-ops";
 import { buildCanvasResourceReferences, buildNodeMentionReferences } from "@/lib/canvas/canvas-resource-references";
@@ -219,9 +217,13 @@ function InfiniteCanvasPage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const projectId = params.id || "";
-    const localAgentConnected = useCanvasAgentStore((state) => state.connected);
-    const localAgentActivity = useCanvasAgentStore((state) => state.activity);
-    const localAgentEnabled = useCanvasAgentStore((state) => state.enabled);
+    const localAgentConnected = useAgentStore((state) => state.connected);
+    const localAgentActivity = useAgentStore((state) => state.activity);
+    const localAgentEnabled = useAgentStore((state) => state.enabled);
+    const agentPanelOpen = useAgentStore((state) => state.panelOpen);
+    const toggleAgentPanel = useAgentStore((state) => state.togglePanel);
+    const openAgentPanel = useAgentStore((state) => state.openPanel);
+    const setAgentCanvasContext = useAgentStore((state) => state.setCanvasContext);
     const containerRef = useRef<HTMLDivElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
     const uploadTargetRef = useRef<{ nodeId?: string; position?: Position } | null>(null);
@@ -298,12 +300,7 @@ function InfiniteCanvasPage() {
     const [superResolveNodeId, setSuperResolveNodeId] = useState<string | null>(null);
     const [angleNodeId, setAngleNodeId] = useState<string | null>(null);
     const [previewNodeId, setPreviewNodeId] = useState<string | null>(null);
-    const [assistantCollapsed, setAssistantCollapsed] = useState(true);
-    const [assistantMounted, setAssistantMounted] = useState(false);
-    const [assistantClosing, setAssistantClosing] = useState(false);
     const [agentUndoSnapshot, setAgentUndoSnapshot] = useState<CanvasAgentSnapshot | null>(null);
-    const codexAutoConnect = ["new", "recent", "choose"].includes(searchParams.get("mode") || "");
-    const codexCompactAgent = codexAutoConnect && searchParams.has("agentUrl");
     const [titleEditing, setTitleEditing] = useState(false);
     const [titleDraft, setTitleDraft] = useState("");
     const [historyState, setHistoryState] = useState({ canUndo: false, canRedo: false });
@@ -320,7 +317,6 @@ function InfiniteCanvasPage() {
     const connectingParamsRef = useRef(connectingParams);
     const connectionTargetNodeIdRef = useRef(connectionTargetNodeId);
     const selectionBoxRef = useRef(selectionBox);
-    const agentCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingConnectionCreateRef = useRef(pendingConnectionCreate);
     const generationRequestsRef = useRef(new Map<string, CanvasGenerationRequest>());
 
@@ -429,8 +425,8 @@ function InfiniteCanvasPage() {
 
     useEffect(() => {
         if (!projectLoaded || !["new", "recent", "choose"].includes(searchParams.get("mode") || "")) return;
-        if (!searchParams.has("agentUrl")) openAgent();
-    }, [projectLoaded, searchParams]);
+        if (!searchParams.has("agentUrl")) openAgentPanel();
+    }, [openAgentPanel, projectLoaded, searchParams]);
 
     useEffect(() => {
         if (!projectLoaded || applyingHistoryRef.current || historyPausedRef.current) return;
@@ -457,13 +453,6 @@ function InfiniteCanvasPage() {
             }
         };
     }, [activeChatId, backgroundMode, chatSessions, connections, createHistoryEntry, nodes, projectLoaded, showImageInfo]);
-
-    useEffect(
-        () => () => {
-            if (agentCloseTimerRef.current) clearTimeout(agentCloseTimerRef.current);
-        },
-        [],
-    );
 
     useEffect(() => {
         if (!projectLoaded || historyPausedRef.current) return;
@@ -768,6 +757,11 @@ function InfiniteCanvasPage() {
         setAgentUndoSnapshot(null);
         return { ...agentUndoSnapshot, projectId, title: currentProject?.title || "未命名画布" };
     }, [agentUndoSnapshot, currentProject?.title, projectId]);
+
+    useEffect(() => {
+        setAgentCanvasContext({ snapshot: agentSnapshot, applyOps: applyAgentOps, undoOps: undoAgentOps, canUndo: Boolean(agentUndoSnapshot) });
+        return () => setAgentCanvasContext(null);
+    }, [agentSnapshot, applyAgentOps, agentUndoSnapshot, setAgentCanvasContext, undoAgentOps]);
     const createNode = useCallback(
         (type: CanvasNodeType, position?: Position) => {
             const targetPosition = position || getCanvasCenter();
@@ -1938,20 +1932,6 @@ function InfiniteCanvasPage() {
         [createAudioFileNode, createImageFileNode, createVideoFileNode, screenToCanvas],
     );
 
-    const pasteAssistantImage = useCallback(
-        (file: File) => {
-            const position = screenToCanvas((containerRef.current?.getBoundingClientRect().left || 0) + size.width / 2, (containerRef.current?.getBoundingClientRect().top || 0) + size.height / 2);
-            void createImageFileNode(file, position);
-            message.success("已从剪切板添加图片");
-        },
-        [createImageFileNode, message, screenToCanvas, size.height, size.width],
-    );
-
-    const handleAssistantSessionsChange = useCallback((sessions: CanvasAssistantSession[], activeId: string | null) => {
-        setChatSessions(sessions);
-        setActiveChatId(activeId);
-    }, []);
-
     const startTitleEditing = useCallback(() => {
         setTitleDraft(currentProject?.title || "未命名画布");
         setTitleEditing(true);
@@ -2487,27 +2467,6 @@ function InfiniteCanvasPage() {
         [insertAssistantImage, insertAssistantText, screenToCanvas, size.height, size.width],
     );
 
-    const assistantOpen = assistantMounted && !assistantCollapsed;
-    const openAgent = () => {
-        if (agentCloseTimerRef.current) {
-            clearTimeout(agentCloseTimerRef.current);
-            agentCloseTimerRef.current = null;
-        }
-        setAssistantMounted(true);
-        setAssistantClosing(false);
-        setAssistantCollapsed(false);
-    };
-    const closeAgent = () => {
-        if (!assistantMounted || assistantClosing) return;
-        setAssistantCollapsed(true);
-        setAssistantClosing(true);
-        agentCloseTimerRef.current = setTimeout(() => {
-            agentCloseTimerRef.current = null;
-            setAssistantMounted(false);
-            setAssistantClosing(false);
-        }, CANVAS_AGENT_PANEL_MOTION_MS);
-    };
-
     if (!projectLoaded) return <CanvasRefreshShell />;
 
     return (
@@ -2530,9 +2489,9 @@ function InfiniteCanvasPage() {
                     onImportImage={() => handleUploadRequest()}
                     onUndo={undoCanvas}
                     onRedo={redoCanvas}
-                    agentOpen={assistantOpen}
+                    agentOpen={agentPanelOpen}
                     compactAgentStatus={{ connected: localAgentConnected, enabled: localAgentEnabled, activity: localAgentActivity }}
-                    onToggleAgent={() => (assistantOpen ? closeAgent() : openAgent())}
+                    onToggleAgent={toggleAgentPanel}
                 />
 
                 <InfiniteCanvas
@@ -2815,26 +2774,7 @@ function InfiniteCanvasPage() {
                 </Modal>
 
                 <AssetPickerModal open={assetPickerOpen} onInsert={handleAssetInsert} onClose={() => setAssetPickerOpen(false)} />
-                {codexCompactAgent && !assistantMounted ? <CanvasLocalAgentPanel headless snapshot={agentSnapshot} canUndoOps={Boolean(agentUndoSnapshot)} onApplyOps={applyAgentOps} onUndoOps={undoAgentOps} autoConnect={codexAutoConnect} /> : null}
             </section>
-            {assistantMounted ? (
-                <CanvasAssistantPanel
-                    nodes={nodes}
-                    selectedNodeIds={selectedNodeIds}
-                    snapshot={agentSnapshot}
-                    sessions={chatSessions}
-                    activeSessionId={activeChatId}
-                    onSelectNodeIds={setSelectedNodeIds}
-                    onSessionsChange={handleAssistantSessionsChange}
-                    onApplyOps={applyAgentOps}
-                    canUndoOps={Boolean(agentUndoSnapshot)}
-                    onUndoOps={undoAgentOps}
-                    onPasteImage={pasteAssistantImage}
-                    autoConnectLocal={codexAutoConnect}
-                    closing={assistantClosing}
-                    onCollapse={closeAgent}
-                />
-            ) : null}
         </main>
     );
 }
