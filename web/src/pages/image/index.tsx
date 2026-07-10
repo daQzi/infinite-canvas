@@ -14,6 +14,7 @@ import { modelOptionLabel, useConfigStore, useEffectiveConfig, type AiConfig } f
 import { useThemeStore } from "@/stores/use-theme-store";
 import { nanoid } from "nanoid";
 import { formatBytes, formatDuration, getDataUrlByteSize, readImageMeta } from "@/lib/image-utils";
+import { imageGenerationResultsFromLog } from "@/lib/image-generation-log";
 import { requestEdit, requestGeneration } from "@/services/api/image";
 import { deleteStoredImages, resolveImageUrl, uploadImage } from "@/services/image-storage";
 import { useAssetStore } from "@/stores/use-asset-store";
@@ -56,6 +57,7 @@ type GenerationLog = {
     status: "成功" | "失败";
     images: GeneratedImage[];
     thumbnails: string[];
+    error?: string;
 };
 
 type GenerationLogConfig = Pick<AiConfig, "model" | "imageModel" | "quality" | "size" | "count">;
@@ -169,6 +171,7 @@ export default function ImagePage() {
         const successCount = successImages.length;
         const failCount = generationCount - successCount;
         const failed = result.find((item): item is PromiseRejectedResult => item.status === "rejected");
+        const errorMessage = failed?.reason instanceof Error ? failed.reason.message : failed ? "生成失败" : undefined;
 
         try {
             const logImages = await Promise.all(
@@ -188,9 +191,10 @@ export default function ImagePage() {
                     failCount,
                     status: successCount ? "成功" : "失败",
                     images: logImages,
+                    error: errorMessage,
                 }),
             );
-            successCount ? message.success("图片已生成") : message.error(failed?.reason instanceof Error ? failed.reason.message : "生成失败");
+            successCount ? message.success("图片已生成") : message.error(errorMessage || "生成失败");
         } finally {
             setRunning(false);
         }
@@ -283,7 +287,7 @@ export default function ImagePage() {
         if (log.config.quality) updateConfig("quality", log.config.quality);
         if (log.config.size) updateConfig("size", log.config.size);
         if (log.config.count) updateConfig("count", log.config.count);
-        setResults(log.images.map((image) => ({ id: image.id, status: "success", image })));
+        setResults(imageGenerationResultsFromLog(log));
     };
 
     const buildRequestSnapshot = () => {
@@ -772,6 +776,7 @@ async function normalizeLog(log: Partial<GenerationLog>): Promise<GenerationLog>
         status: log.status || "成功",
         images,
         thumbnails: images.map((image) => image.dataUrl).filter(Boolean),
+        error: log.error,
     };
 }
 
@@ -822,6 +827,7 @@ function buildLog({
     failCount,
     status,
     images,
+    error,
 }: {
     prompt: string;
     model: string;
@@ -832,6 +838,7 @@ function buildLog({
     failCount: number;
     status: GenerationLog["status"];
     images: GeneratedImage[];
+    error?: string;
 }): GenerationLog {
     const logConfig = {
         model: config.model,
@@ -858,5 +865,6 @@ function buildLog({
         status,
         images,
         thumbnails: images.map((image) => image.dataUrl).filter(Boolean),
+        error,
     };
 }
