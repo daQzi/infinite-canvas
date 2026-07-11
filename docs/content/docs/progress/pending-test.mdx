@@ -5,6 +5,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 
 # 待测试
 
+- Tauri 原生下载：图片、视频、音频、素材 ZIP 和画布 ZIP 会打开系统“另存为”窗口；需在 macOS / Windows 验证保存后文件可正常打开，取消保存不会报错，Web/Docker 下载行为保持不变。
 - Tauri 桌面打包：手动 `Tauri builds` workflow 仍需验证 macOS Apple Silicon / Intel `.dmg`、Windows `.exe`、Linux `.AppImage` / `.deb`；`v*.*.*` 标签触发的 `Release` workflow 仅构建 macOS 和 Windows 安装包并创建草稿 Release，配置 Apple secrets 时会签名 / notarization，未配置时会发布未签名 macOS 产物。
 - 本地 Agent 连接说明：新增提醒说明只有安装 Codex 插件或手动添加 MCP 后才会增加 Codex token 消耗，直接运行 `npx -y @basketikun/canvas-agent` 不会安装 MCP；需验证文案位置清晰。
 - 本地 Agent 连接说明：画布面板和配置弹窗 Codex Tab 改为区分“Codex 插件启动画布”和“直接运行 Agent 后网页连接”两种方式，需验证文案和布局清晰。

@@ -19,6 +19,10 @@ assert.deepEqual(calls.at(-1)?.args?.payload.source, { kind: "storage", storageK
 
 await saveFile({ kind: "url", url: "https://example.com/video.mp4" }, "video.mp4");
 assert.deepEqual(calls.at(-1)?.args?.payload.source, { kind: "url", url: "https://example.com/video.mp4" }, "HTTP media is downloaded directly by Rust");
+assert.equal("path" in calls.at(-1)!.args!.payload, false, "the frontend cannot choose an arbitrary destination path");
+
+await saveFile({ kind: "url", url: "data:text/plain;base64,aGk=" }, "note.txt");
+assert.equal(Buffer.from(calls.at(-1)?.args?.payload.source.bodyBase64, "base64").toString(), "hi", "data URLs keep their original bytes");
 
 await saveFile({ kind: "blob", blob: new Blob(["zip"]) }, "canvas.zip");
 assert.equal(calls.at(-1)?.args?.payload.source.kind, "base64", "generated files are encoded for the native command");

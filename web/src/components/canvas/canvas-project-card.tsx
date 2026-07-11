@@ -2,12 +2,14 @@ import { Check, Download, Pencil, Trash2, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Input } from "antd";
 
+import { useFileDownload } from "@/hooks/use-file-download";
+import { createCanvasProjectPackage, safeCanvasExportFileName } from "@/lib/canvas/canvas-export";
 import { useCanvasStore, type CanvasProject } from "@/stores/canvas/use-canvas-store";
 import { useCanvasUiStore } from "@/stores/canvas/use-canvas-ui-store";
-import { exportCanvasProjects } from "@/lib/canvas/canvas-export";
 
 export function CanvasProjectCard({ project }: { project: CanvasProject }) {
     const navigate = useNavigate();
+    const downloadFile = useFileDownload();
     const [searchParams] = useSearchParams();
     const renameProject = useCanvasStore((state) => state.renameProject);
     const selectedIds = useCanvasUiStore((state) => state.selectedProjectIds);
@@ -24,6 +26,11 @@ export function CanvasProjectCard({ project }: { project: CanvasProject }) {
     const saveTitle = () => {
         renameProject(project.id, editingTitle);
         stopEditing();
+    };
+    const exportProject = async () => {
+        const fileName = safeCanvasExportFileName(project.title || "无限画布");
+        const zip = await createCanvasProjectPackage([project]);
+        await downloadFile({ kind: "blob", blob: zip }, `${fileName}.zip`);
     };
 
     return (
@@ -65,7 +72,7 @@ export function CanvasProjectCard({ project }: { project: CanvasProject }) {
                         </>
                     ) : (
                         <>
-                            <Button type="text" size="small" shape="circle" icon={<Download className="size-4" />} onClick={() => void exportCanvasProjects([project], project.title || "无限画布")} aria-label="导出" />
+                            <Button type="text" size="small" shape="circle" icon={<Download className="size-4" />} onClick={() => void exportProject()} aria-label="导出" />
                             <Button type="text" size="small" shape="circle" icon={<Pencil className="size-4" />} onClick={() => startEditing(project.id, project.title)} aria-label="重命名" />
                             <Button type="text" size="small" shape="circle" icon={<Trash2 className="size-4" />} onClick={() => setDeleteIds([project.id])} aria-label="删除" />
                         </>

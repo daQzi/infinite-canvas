@@ -8,7 +8,7 @@ import { formatBytes, readFileAsDataUrl } from "@/lib/image-utils";
 import { uploadImage } from "@/services/image-storage";
 import { cn } from "@/lib/utils";
 import { useAssetStore, type Asset, type AssetKind, type ImageAsset } from "@/stores/use-asset-store";
-import { exportAssets, readAssetPackage } from "./asset-transfer";
+import { createAssetPackage, readAssetPackage } from "./asset-transfer";
 
 type AssetFormValues = {
     kind: AssetKind;
@@ -160,7 +160,8 @@ export default function AssetsPage() {
             message.warning("暂无素材可导出");
             return;
         }
-        await exportAssets(validAssets);
+        const zip = await createAssetPackage(validAssets);
+        await downloadFile({ kind: "blob", blob: zip }, "我的素材.zip");
     };
 
     const importAssetZip = async (file?: File) => {

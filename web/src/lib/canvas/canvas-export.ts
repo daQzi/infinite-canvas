@@ -1,12 +1,10 @@
-import { saveAs } from "file-saver";
-
 import { createZip } from "@/lib/zip";
 import { getMediaBlob } from "@/services/file-storage";
 import { getImageBlob } from "@/services/image-storage";
 import type { CanvasExportAsset, CanvasExportFile } from "@/types/canvas-export";
 import type { CanvasProject } from "@/stores/canvas/use-canvas-store";
 
-export async function exportCanvasProjects(projects: CanvasProject[], fileName = "无限画布") {
+export async function createCanvasProjectPackage(projects: CanvasProject[]) {
     const zipFiles: { name: string; data: BlobPart }[] = [];
     const exportedProjects = await Promise.all(
         projects.map(async (project) => {
@@ -15,7 +13,7 @@ export async function exportCanvasProjects(projects: CanvasProject[], fileName =
                 collectStorageKeys(project).map(async (storageKey) => {
                     const blob = storageKey.startsWith("image:") ? await getImageBlob(storageKey) : await getMediaBlob(storageKey);
                     if (!blob) return;
-                    const path = `projects/${project.id}/files/${safeFileName(storageKey)}.${fileExtension(blob.type, storageKey)}`;
+                    const path = `projects/${project.id}/files/${safeCanvasExportFileName(storageKey)}.${fileExtension(blob.type, storageKey)}`;
                     files.push({ storageKey, path, mimeType: blob.type || "application/octet-stream", bytes: blob.size });
                     zipFiles.push({ name: path, data: blob });
                 }),
@@ -25,8 +23,7 @@ export async function exportCanvasProjects(projects: CanvasProject[], fileName =
     );
 
     const data: CanvasExportFile = { app: "infinite-canvas", version: 3, exportedAt: new Date().toISOString(), projects: exportedProjects };
-    const zip = await createZip([{ name: "projects.json", data: JSON.stringify(data, null, 2) }, ...zipFiles]);
-    saveAs(zip, `${safeFileName(fileName)}.zip`);
+    return createZip([{ name: "projects.json", data: JSON.stringify(data, null, 2) }, ...zipFiles]);
 }
 
 function collectStorageKeys(value: unknown, keys = new Set<string>()) {
@@ -36,7 +33,7 @@ function collectStorageKeys(value: unknown, keys = new Set<string>()) {
     return [...keys];
 }
 
-function safeFileName(value: string) {
+export function safeCanvasExportFileName(value: string) {
     return value.replace(/[\\/:*?"<>|]/g, "_");
 }
 
