@@ -1,9 +1,9 @@
 import { Copy, Download, PencilLine, Search, Trash2, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { App, Button, Card, Drawer, Empty, Form, Image, Input, Modal, Pagination, Select, Space, Tag, Typography } from "antd";
-import { saveAs } from "file-saver";
 
 import { useCopyText } from "@/hooks/use-copy-text";
+import { useFileDownload } from "@/hooks/use-file-download";
 import { formatBytes, readFileAsDataUrl } from "@/lib/image-utils";
 import { uploadImage } from "@/services/image-storage";
 import { cn } from "@/lib/utils";
@@ -32,6 +32,7 @@ const kindOptions = [
 export default function AssetsPage() {
     const { message } = App.useApp();
     const copyText = useCopyText();
+    const downloadFile = useFileDownload();
     const [form] = Form.useForm<AssetFormValues>();
     const coverInputRef = useRef<HTMLInputElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
@@ -148,7 +149,10 @@ export default function AssetsPage() {
 
     const downloadImage = (asset: Asset) => {
         if (asset.kind !== "image" && asset.kind !== "video") return;
-        saveAs(asset.kind === "video" ? asset.data.url : asset.data.dataUrl, `${asset.title || "asset"}.${asset.data.mimeType.split("/")[1] || "png"}`);
+        void downloadFile(
+            { kind: "url", url: asset.kind === "video" ? asset.data.url : asset.data.dataUrl, storageKey: asset.data.storageKey },
+            `${asset.title || "asset"}.${asset.data.mimeType.split("/")[1] || "png"}`,
+        );
     };
 
     const exportAllAssets = async () => {

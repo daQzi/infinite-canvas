@@ -2,7 +2,6 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Bot, Home, ImageIcon, Images, List, Menu, Music2, Plus, Redo2, Settings2, Trash2, Undo2, Upload, Video } from "lucide-react";
-import { saveAs } from "file-saver";
 
 import { requestEdit, requestGeneration, requestImageQuestion } from "@/services/api/image";
 import { requestAudioGeneration, storeGeneratedAudio } from "@/services/api/audio";
@@ -15,6 +14,7 @@ import { getDataUrlByteSize, readImageMeta } from "@/lib/image-utils";
 import { canvasThemes, type CanvasBackgroundMode } from "@/lib/canvas-theme";
 import { UserStatusActions } from "@/components/layout/user-status-actions";
 import { useAssetStore } from "@/stores/use-asset-store";
+import { useFileDownload } from "@/hooks/use-file-download";
 import { useThemeStore } from "@/stores/use-theme-store";
 import { cropDataUrl, splitDataUrl, upscaleDataUrl } from "@/lib/canvas/canvas-image-data";
 import { fitNodeSize, nodeSizeFromRatio } from "@/lib/canvas/canvas-node-size";
@@ -213,6 +213,7 @@ function ConnectionCreateOption({ theme, icon, title, description, onClick }: { 
 
 function InfiniteCanvasPage() {
     const { message, modal } = App.useApp();
+    const downloadFile = useFileDownload();
     const params = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -1558,8 +1559,11 @@ function InfiniteCanvasPage() {
 
     const downloadNodeImage = useCallback((node: CanvasNodeData) => {
         if ((node.type !== CanvasNodeType.Image && node.type !== CanvasNodeType.Video && node.type !== CanvasNodeType.Audio) || !node.metadata?.content) return;
-        saveAs(node.metadata.content, `canvas-${node.type}-${node.id}.${node.type === CanvasNodeType.Video ? "mp4" : node.type === CanvasNodeType.Audio ? audioExtension(node.metadata.mimeType) : imageExtension(node.metadata.content)}`);
-    }, []);
+        void downloadFile(
+            { kind: "url", url: node.metadata.content, storageKey: node.metadata.storageKey },
+            `canvas-${node.type}-${node.id}.${node.type === CanvasNodeType.Video ? "mp4" : node.type === CanvasNodeType.Audio ? audioExtension(node.metadata.mimeType) : imageExtension(node.metadata.content)}`,
+        );
+    }, [downloadFile]);
 
     const saveNodeAsset = useCallback(
         async (node: CanvasNodeData) => {

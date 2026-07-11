@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { App, Button, Checkbox, Drawer, Empty, Input, Modal, Tag, Typography } from "antd";
 import localforage from "localforage";
 import { nanoid } from "nanoid";
-import { saveAs } from "file-saver";
 
 import { AssetPickerModal, type InsertAssetPayload } from "@/components/canvas/asset-picker-modal";
 import { ModelPicker } from "@/components/model-picker";
@@ -11,6 +10,7 @@ import { PromptSelectDialog } from "@/components/prompts/prompt-select-dialog";
 import { VideoSettingsPanel, normalizeVideoResolutionValue, normalizeVideoSizeValue, videoSizeLabel } from "@/components/video-settings-panel";
 import { canvasThemes } from "@/lib/canvas-theme";
 import { formatBytes, formatDuration } from "@/lib/image-utils";
+import { useFileDownload } from "@/hooks/use-file-download";
 import { boolConfig, isSeedanceVideoConfig, normalizeSeedanceRatio, seedanceReferenceLabel, seedanceVideoReferenceError, seedanceVideoReferenceHint, SEEDANCE_REFERENCE_LIMITS } from "@/lib/seedance-video";
 import { deleteStoredMedia, resolveMediaUrl, uploadMediaFile } from "@/services/file-storage";
 import { resolveImageUrl, uploadImage } from "@/services/image-storage";
@@ -70,6 +70,7 @@ const logStore = localforage.createInstance({ name: "infinite-canvas", storeName
 
 export default function VideoPage() {
     const { message } = App.useApp();
+    const downloadFile = useFileDownload();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const activeLogIdsRef = useRef<Set<string>>(new Set());
     const config = useConfigStore((state) => state.config);
@@ -231,7 +232,7 @@ export default function VideoPage() {
     };
 
     const downloadVideo = (video: GeneratedVideo) => {
-        saveAs(video.url, "video.mp4");
+        void downloadFile({ kind: "url", url: video.url, storageKey: video.storageKey }, "video.mp4");
     };
 
     const saveResultToAssets = (video: GeneratedVideo) => {
