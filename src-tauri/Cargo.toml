@@ -1,6 +1,6 @@
 [package]
 name = "infinite-canvas-tauri"
-version = "0.6.4"
+version = "0.6.5"
 description = "Infinite Canvas Tauri desktop application."
 authors = ["Infinite Canvas Contributors"]
 edition = "2021"
