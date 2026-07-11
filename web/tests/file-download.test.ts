@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-import { saveFile } from "../src/services/file-download";
+import { fileDownloadErrorMessage, saveFile } from "../src/services/file-download";
 
 const calls: { command: string; args?: Record<string, any> }[] = [];
 
@@ -29,5 +29,7 @@ assert.equal(calls.at(-1)?.args?.payload.source.kind, "base64", "generated files
 assert.equal(Buffer.from(calls.at(-1)?.args?.payload.source.bodyBase64, "base64").toString(), "zip", "generated file bytes are preserved");
 
 assert.deepEqual(calls.at(-1)?.args?.payload.fileName, "canvas.zip", "the suggested filename is forwarded");
+assert.equal(fileDownloadErrorMessage("missing field `body_base64`"), "missing field `body_base64`", "Tauri string errors stay visible");
+assert.equal(fileDownloadErrorMessage(new Error("disk full")), "disk full", "JavaScript errors stay visible");
 
 console.log("file download tests passed");

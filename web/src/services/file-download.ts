@@ -21,6 +21,13 @@ export async function saveFile(source: DownloadSource, fileName: string): Promis
     });
 }
 
+export function fileDownloadErrorMessage(error: unknown) {
+    if (error instanceof Error && error.message.trim()) return error.message;
+    if (typeof error === "string" && error.trim()) return error;
+    if (error && typeof error === "object" && "message" in error && typeof error.message === "string" && error.message.trim()) return error.message;
+    return "文件保存失败";
+}
+
 async function tauriDownloadSource(source: DownloadSource): Promise<TauriDownloadSource> {
     if (source.kind === "blob") return { kind: "base64", bodyBase64: await blobToBase64(source.blob) };
     if (source.storageKey) return { kind: "storage", storageKey: source.storageKey };

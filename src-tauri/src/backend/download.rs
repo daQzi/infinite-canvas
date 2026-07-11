@@ -18,8 +18,14 @@ pub struct SaveFilePayload {
 #[serde(tag = "kind", rename_all = "camelCase")]
 enum DownloadSource {
     Url { url: String },
-    Storage { storage_key: String },
-    Base64 { body_base64: String },
+    Storage {
+        #[serde(rename = "storageKey")]
+        storage_key: String,
+    },
+    Base64 {
+        #[serde(rename = "bodyBase64")]
+        body_base64: String,
+    },
 }
 
 #[derive(Debug, Serialize)]
@@ -85,7 +91,7 @@ fn safe_file_name(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::safe_file_name;
+    use super::{safe_file_name, DownloadSource};
 
     #[test]
     fn sanitizes_suggested_file_names() {
@@ -98,5 +104,14 @@ mod tests {
         assert!(super::super::http::http_url("https://example.com/file.png").is_ok());
         assert!(super::super::http::http_url("http://example.com/file.png").is_ok());
         assert!(super::super::http::http_url("file:///tmp/file.png").is_err());
+    }
+
+    #[test]
+    fn deserializes_frontend_source_fields() {
+        let storage: DownloadSource = serde_json::from_str(r#"{"kind":"storage","storageKey":"image:1"}"#).unwrap();
+        assert!(matches!(storage, DownloadSource::Storage { storage_key } if storage_key == "image:1"));
+
+        let body: DownloadSource = serde_json::from_str(r#"{"kind":"base64","bodyBase64":"emlw"}"#).unwrap();
+        assert!(matches!(body, DownloadSource::Base64 { body_base64 } if body_base64 == "emlw"));
     }
 }
