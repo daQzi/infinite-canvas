@@ -4,8 +4,10 @@ mod backend;
 pub fn run() {
     tauri::Builder::default()
         .manage(backend::http::HttpClient::default())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            backend::download::tauri_save_file,
             backend::http::tauri_http_request,
             backend::media::tauri_store_media_file,
             backend::media::tauri_read_media_file,

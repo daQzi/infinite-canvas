@@ -17,6 +17,27 @@ impl Default for HttpClient {
     }
 }
 
+impl HttpClient {
+    pub(crate) async fn download(&self, url: &str) -> Result<Vec<u8>, String> {
+        let url = http_url(url)?;
+        let response = self
+            .client
+            .get(url)
+            .send()
+            .await
+            .map_err(|error| format!("下载文件失败：{error}"))?;
+        let status = response.status();
+        if !status.is_success() {
+            return Err(format!("下载文件失败：HTTP {}", status.as_u16()));
+        }
+        response
+            .bytes()
+            .await
+            .map(|body| body.to_vec())
+            .map_err(|error| format!("读取下载文件失败：{error}"))
+    }
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HttpRequestPayload {
@@ -39,10 +60,7 @@ pub async fn tauri_http_request(
     client: State<'_, HttpClient>,
     payload: HttpRequestPayload,
 ) -> Result<HttpResponsePayload, String> {
-    let url = reqwest::Url::parse(&payload.url).map_err(|error| format!("请求地址不合法：{error}"))?;
-    if !matches!(url.scheme(), "http" | "https") {
-        return Err("Tauri HTTP 仅支持 http/https 请求".into());
-    }
+    let url = http_url(&payload.url)?;
 
     let method = payload
         .method
@@ -70,6 +88,14 @@ pub async fn tauri_http_request(
         headers,
         body_base64: general_purpose::STANDARD.encode(body),
     })
+}
+
+pub(crate) fn http_url(value: &str) -> Result<reqwest::Url, String> {
+    let url = reqwest::Url::parse(value).map_err(|error| format!("请求地址不合法：{error}"))?;
+    if !matches!(url.scheme(), "http" | "https") {
+        return Err("Tauri HTTP 仅支持 http/https 请求".into());
+    }
+    Ok(url)
 }
 
 fn build_headers(input: HashMap<String, String>) -> Result<HeaderMap, String> {

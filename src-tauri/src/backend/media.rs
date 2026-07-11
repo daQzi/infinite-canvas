@@ -122,6 +122,14 @@ pub fn tauri_read_media_file(
     }))
 }
 
+pub(crate) fn read_media_bytes(app: &AppHandle, storage_key: &str) -> Result<Vec<u8>, String> {
+    let path = media_paths(app, storage_key)?.body;
+    if !path.exists() {
+        return Err("找不到要保存的媒体文件".into());
+    }
+    fs::read(path).map_err(|error| format!("读取媒体文件失败：{error}"))
+}
+
 #[tauri::command]
 pub fn tauri_delete_media_files(
     app: AppHandle,
